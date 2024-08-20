@@ -1,31 +1,58 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { fetch } from "whatwg-fetch";
+import QuestionItem from "./QuestionItem";
 
-function QuestionList({ questions, onDeleteQuestion, onUpdateCorrectIndex }) {
+function QuestionList() {
+  const [questions, setQuestions] = useState([]);
+
+  const FetchFn = () => {
+    fetch("http://localhost:4000/questions")
+      .then((res) => res.json())
+      .then((data) =>
+        setQuestions(
+          data.map((q) => {
+            return (
+              <QuestionItem
+                key={q.id}
+                handleChange={handleChange}
+                question={q}
+                deleted={deleted}
+              />
+            );
+          })
+        )
+      );
+  };
+
+  useEffect(() => {
+    FetchFn();
+  }, []);
+
+  function deleted(id) {
+    fetch(`http://localhost:4000/questions/${id}`, { method: "DELETE" })
+    .then(
+      () => FetchFn()
+    );
+  }
+
+  function handleChange(e, id) {
+    fetch(`http://localhost:4000/questions/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        correctIndex: parseInt(e.target.value),
+      }),
+    });
+  }
+
   return (
-    <div>
-      <h2>Question List</h2>
+    <section>
+      <h1>Quiz Questions</h1>
       <ul>
-        {questions.map((question) => (
-          <li key={question.id}>
-            <div>{question.prompt}</div>
-            <label>
-              Correct Answer:
-              <select
-                value={question.correctIndex}
-                onChange={(e) => onUpdateCorrectIndex(question.id, parseInt(e.target.value, 10))}
-              >
-                {question.answers.map((answer, index) => (
-                  <option key={index} value={index}>
-                    {answer}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button onClick={() => onDeleteQuestion(question.id)}>Delete</button>
-          </li>
-        ))}
+        {/* display QuestionItem components here after fetching */}
+        {questions}
       </ul>
-    </div>
+    </section>
   );
 }
 
